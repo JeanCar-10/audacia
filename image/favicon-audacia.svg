@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 500 500" role="img" aria-labelledby="title">
+  <title id="title">AUDACIA</title>
+  <rect width="500" height="500" rx="115" fill="#303D35"/>
+  <g transform="translate(45 45) scale(0.82)" fill="#FFFFFF">
+    <path d="M 250,35 L 40,465 C 125,445 205,395 275,328 C 320,285 360,262 392,250 C 330,254 275,282 225,325 C 185,358 148,382 118,395 L 250,145 L 292,228 C 262,252 238,278 218,302 C 258,274 305,248 352,236 Z"/>
+    <path d="M 378,288 L 460,465 C 385,445 318,412 270,375 L 305,346 C 325,360 345,372 366,380 L 336,315 Z"/>
+    <g>
+      <polygon points="365,212 478,180 392,230"/>
+      <polygon points="402,248 478,180 432,265 412,248"/>
+      <polygon points="397,235 402,248 395,260 412,248"/>
+    </g>
+  </g>
+</svg>
