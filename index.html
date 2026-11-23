@@ -2027,9 +2027,10 @@ if (!adminDetail.dataset.eventsReady) {
             await restaurarRecurso(id);
         }
 
-            if (accion === "definitivo") {
-                await eliminarDefinitivamente(id);
-            }
+        if (accion === "definitivo") {
+            alert("El botón de eliminación definitiva sí está ejecutando la acción.");
+            await eliminarDefinitivamente(id);
+        }
         } catch (error) {
             console.error(error);
             alert("No se pudo completar la acción. Inténtalo nuevamente.");
