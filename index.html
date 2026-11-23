@@ -849,6 +849,8 @@
 
 
 // CONEXIÓN CON SUPABASE
+
+  
 const SUPABASE_URL = "https://vvmdnyizpeqxqklwzrjg.supabase.co";
 
 const SUPABASE_KEY = "sb_publishable_NCyUNNozynQ4KDwATONDxA_Ack8oXL7";
@@ -877,6 +879,34 @@ async function prepararSesionAnonima() {
 }
 
 
+
+/* CONEXIÓN DE RECURSOS CON SUPABASE */
+
+async function obtenerRecursosSupabase() {
+    const { data, error } = await clienteSupabase
+        .from("recursos")
+        .select("*")
+        .order("fecha", { ascending: false });
+
+    if (error) {
+        console.error("Error al consultar recursos:", error);
+        throw error;
+    }
+
+    return data.map(recurso => ({
+        id: recurso.id,
+        nombre: recurso.nombre,
+        tipo: recurso.tipo,
+        comentario: recurso.comentario || "",
+        url: recurso.url || "",
+        storagePath: recurso.storage_path || "",
+        nombreArchivo: recurso.nombre_archivo || "",
+        tamano: recurso.tamano || 0,
+        fecha: recurso.fecha,
+        estado: recurso.estado,
+        eliminadoEn: recurso.eliminado_en
+    }));
+}
 
 
 
