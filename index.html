@@ -1765,41 +1765,73 @@ async function enviarAPapelera(id) {
 
 /* Editar el nombre y comentario de una publicación */
 
+
 async function editarRecurso(id) {
-    const recursos = await obtenerRecursos();
-    const recurso = recursos.find(item => item.id === id);
+    try {
+        const recursos = await obtenerRecursosSupabase();
+        const recurso = recursos.find(
+            item => String(item.id) === String(id)
+        );
 
-    if (!recurso) return;
+        if (!recurso) {
+            alert("No se encontró la publicación en Supabase.");
+            return;
+        }
 
-    const nuevoNombre = prompt(
-        "Nuevo nombre del recurso:",
-        recurso.nombre
-    );
+        const nuevoNombre = prompt(
+            "Nuevo nombre del recurso:",
+            recurso.nombre
+        );
 
-    if (nuevoNombre === null) return;
+        if (nuevoNombre === null) return;
 
-    if (!nuevoNombre.trim()) {
-        alert("El nombre no puede estar vacío.");
-        return;
+        if (!nuevoNombre.trim()) {
+            alert("El nombre no puede estar vacío.");
+            return;
+        }
+
+        const nuevoComentario = prompt(
+            "Nuevo comentario:",
+            recurso.comentario || ""
+        );
+
+        if (nuevoComentario === null) return;
+
+        const { data, error } = await clienteSupabase
+            .from("recursos")
+            .update({
+                nombre: nuevoNombre.trim().slice(0, 100),
+                comentario: nuevoComentario.trim().slice(0, 500),
+                updated_at: new Date().toISOString()
+            })
+            .eq("id", id)
+            .select("id")
+            .maybeSingle();
+
+        if (error) throw error;
+
+        if (!data) {
+            throw new Error(
+                "Supabase no pudo guardar los cambios. Comprueba tus permisos."
+            );
+        }
+
+        recurso.nombre = nuevoNombre.trim().slice(0, 100);
+        recurso.comentario = nuevoComentario.trim().slice(0, 500);
+
+        registrarActividad("Publicación editada", recurso);
+
+        await mostrarAdminSeccion("publicaciones");
+        await mostrarRecursos();
+
+        alert("¡Publicación editada correctamente!");
+
+    } catch (error) {
+        console.error("Error al editar:", error);
+        alert("Error: " + (error.message || "No se pudo editar la publicación."));
     }
-
-    const nuevoComentario = prompt(
-        "Nuevo comentario:",
-        recurso.comentario || ""
-    );
-
-    if (nuevoComentario === null) return;
-
-    recurso.nombre = nuevoNombre.trim().slice(0, 100);
-    recurso.comentario = nuevoComentario.trim().slice(0, 500);
-
-    await guardarEnBaseDatos(recurso);
-
-    registrarActividad("Publicación editada", recurso);
-
-    await mostrarAdminSeccion("publicaciones");
-    await mostrarRecursos();
 }
+
 
 /* Mostrar papelera */
 
