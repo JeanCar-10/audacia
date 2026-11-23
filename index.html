@@ -893,19 +893,47 @@ async function obtenerRecursosSupabase() {
         throw error;
     }
 
-    return data.map(recurso => ({
-        id: recurso.id,
-        nombre: recurso.nombre,
-        tipo: recurso.tipo,
-        comentario: recurso.comentario || "",
-        url: recurso.url || "",
-        storagePath: recurso.storage_path || "",
-        nombreArchivo: recurso.nombre_archivo || "",
-        tamano: recurso.tamano || 0,
-        fecha: recurso.fecha,
-        estado: recurso.estado,
-        eliminadoEn: recurso.eliminado_en
-    }));
+    const recursos = await Promise.all(
+        data.map(async recurso => {
+            let archivoURL = "";
+
+            // Crear enlace temporal para archivos privados
+            if (recurso.storage_path) {
+                const { data: archivo, error: errorArchivo } =
+                    await clienteSupabase
+                        .storage
+                        .from("audacia-archivos")
+                        .createSignedUrl(recurso.storage_path, 3600);
+
+                if (errorArchivo) {
+                    console.error(
+                        "Error al generar enlace del archivo:",
+                        errorArchivo
+                    );
+                    throw errorArchivo;
+                }
+
+                archivoURL = archivo.signedUrl;
+            }
+
+            return {
+                id: recurso.id,
+                nombre: recurso.nombre,
+                tipo: recurso.tipo,
+                comentario: recurso.comentario || "",
+                url: recurso.url || "",
+                storagePath: recurso.storage_path || "",
+                archivoURL,
+                nombreArchivo: recurso.nombre_archivo || "",
+                tamano: recurso.tamano || 0,
+                fecha: recurso.fecha,
+                estado: recurso.estado,
+                eliminadoEn: recurso.eliminado_en
+            };
+        })
+    );
+
+    return recursos;
 }
 
 /* SUBIR ARCHIVOS A SUPABASE */
@@ -1196,8 +1224,28 @@ async function verificarPIN() {
 
         pinInput.value = '';
 
+      // Cargar los recursos compartidos desde Supabase
+        await mostrarRecursos();
+
         window.scrollTo(0, 0);
 
+      // Cargar los recursos compartidos desde Supabase
+        try {
+            await mostrarRecursos();
+        } catch (error) {
+            console.error("Error al cargar los recursos compartidos:", error);
+        
+            const contenedor = document.getElementById("recursos-publicados");
+            contenedor.className = "recursos-vacios";
+            contenedor.innerHTML = `
+                <h3>No se pudieron cargar los materiales</h3>
+                <p>Comprueba tu conexión e intenta actualizar la página.</p>
+            `;
+        }
+
+
+
+      
     } catch (error) {
 
         console.error('Error de acceso:', error);
@@ -2224,7 +2272,7 @@ async function mostrarRecursos() {
 
     const contenedor = document.getElementById("recursos-publicados");
 
-    const recursos = await obtenerRecursos();
+    const recursos = await obtenerRecursosSupabase();
 
     const busqueda = document
         .getElementById("buscar-recursos")
@@ -2337,7 +2385,7 @@ async function mostrarRecursos() {
 
         } else if (recurso.tipo === "imagen") {
 
-            const imagenURL = crearURLTemporal(recurso.archivo);
+            const imagenURL = recurso.archivoURL;
 
             const imagen = document.createElement("img");
             imagen.src = imagenURL;
@@ -2363,7 +2411,7 @@ async function mostrarRecursos() {
 
         } else if (recurso.tipo === "video") {
 
-            const videoURL = crearURLTemporal(recurso.archivo);
+            const videoURL = recurso.archivoURL;
 
             const video = document.createElement("video");
             video.src = videoURL;
@@ -2376,7 +2424,7 @@ async function mostrarRecursos() {
  
             } else if (recurso.tipo === "pdf") {
 
-                const archivoURL = crearURLTemporal(recurso.archivo);
+                const archivoURL = recurso.archivoURL;
 
                 contenido = `
                     <div class="acciones-documento">
@@ -2397,7 +2445,7 @@ async function mostrarRecursos() {
 
         } else {
 
-            const archivoURL = crearURLTemporal(recurso.archivo);
+            const archivoURL = recurso.archivoURL;
 
             contenido = `
                 <a href="${archivoURL}"
@@ -2475,7 +2523,6 @@ function cerrarVistaPrevia() {
 /* 8. INICIAR Y CARGAR LOS RECURSOS */
 
 iniciarBaseDatos()
-    .then(() => mostrarRecursos())
     .catch(error => {
         console.error("Error al iniciar AUDACIA:", error);
         alert("No se pudo iniciar el almacenamiento de recursos.");
