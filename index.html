@@ -1443,7 +1443,7 @@ async function limpiarPapeleraVencida() {
 /* Actualizar contadores del panel */
 
 async function actualizarEstadisticasAdmin() {
-    const recursos = await obtenerRecursos();
+    const recursos = await obtenerRecursosSupabase();
 
     const publicados = recursos.filter(
         recurso => recurso.estado === "publicado"
@@ -1628,7 +1628,7 @@ function mostrarConfiguracionAdmin() {
 /* Mostrar publicaciones */
 
 async function mostrarAdminPublicaciones() {
-    const recursos = await obtenerRecursos();
+    const recursos = await obtenerRecursosSupabase();
 
     const publicados = recursos
         .filter(recurso => recurso.estado === "publicado")
@@ -1739,7 +1739,7 @@ async function editarRecurso(id) {
 /* Mostrar papelera */
 
 async function mostrarAdminPapelera() {
-    const recursos = await obtenerRecursos();
+    const recursos = await obtenerRecursosSupabase();
 
     const papelera = recursos
         .filter(recurso => recurso.estado === "papelera")
