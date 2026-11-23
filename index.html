@@ -908,7 +908,32 @@ async function obtenerRecursosSupabase() {
     }));
 }
 
+/* SUBIR ARCHIVOS A SUPABASE */
 
+async function subirArchivoSupabase(archivo) {
+    const extension = archivo.name.split(".").pop();
+    const nombreUnico = `${crypto.randomUUID()}.${extension}`;
+    const ruta = `${Date.now()}-${nombreUnico}`;
+
+    const { data, error } = await clienteSupabase
+        .storage
+        .from("audacia-archivos")
+        .upload(ruta, archivo, {
+            cacheControl: "3600",
+            upsert: false
+        });
+
+    if (error) {
+        console.error("Error al subir archivo:", error);
+        throw error;
+    }
+
+    return {
+        storagePath: data.path,
+        nombreArchivo: archivo.name,
+        tamano: archivo.size
+    };
+}
 
 
 
