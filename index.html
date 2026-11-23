@@ -1712,10 +1712,10 @@ async function mostrarAdminPublicaciones() {
 async function enviarAPapelera(id) {
     try {
         const recursos = await obtenerRecursosSupabase();
-        const recurso = recursos.find(item => item.id === id);
+        const recurso = recursos.find(item => String(item.id) === String(id));
 
         if (!recurso) {
-            alert("No se encontró el documento.");
+            alert("No se encontró el documento en Supabase.");
             return;
         }
 
@@ -1727,15 +1727,23 @@ async function enviarAPapelera(id) {
 
         const fechaEliminacion = new Date().toISOString();
 
-        const { error } = await clienteSupabase
+        const { data, error } = await clienteSupabase
             .from("recursos")
             .update({
                 estado: "papelera",
                 eliminado_en: fechaEliminacion
             })
-            .eq("id", id);
+            .eq("id", id)
+            .select("id")
+            .maybeSingle();
 
         if (error) throw error;
+
+        if (!data) {
+            throw new Error(
+                "Supabase no modificó el documento. Comprueba los permisos de administrador."
+            );
+        }
 
         recurso.estado = "papelera";
         recurso.eliminadoEn = fechaEliminacion;
@@ -1745,13 +1753,14 @@ async function enviarAPapelera(id) {
         await mostrarAdminSeccion("publicaciones");
         await mostrarRecursos();
 
-        alert("Documento enviado a la papelera correctamente.");
+        alert("¡Documento enviado a la papelera correctamente!");
 
     } catch (error) {
         console.error("Error al enviar a papelera:", error);
-        alert("No se pudo enviar el documento a la papelera. Revisa la conexión y tus permisos.");
+        alert("Error: " + (error.message || "No se pudo completar la operación."));
     }
 }
+
 
 
 /* Editar el nombre y comentario de una publicación */
