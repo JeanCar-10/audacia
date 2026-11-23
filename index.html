@@ -935,7 +935,31 @@ async function subirArchivoSupabase(archivo) {
     };
 }
 
+/* GUARDAR PUBLICACIONES EN SUPABASE */
 
+async function guardarRecursoSupabase(recurso, archivoInfo = null) {
+    const { data, error } = await clienteSupabase
+        .from("recursos")
+        .insert({
+            nombre: recurso.nombre,
+            tipo: recurso.tipo,
+            comentario: recurso.comentario || "",
+            url: recurso.url || null,
+            storage_path: archivoInfo?.storagePath || null,
+            nombre_archivo: archivoInfo?.nombreArchivo || "",
+            tamano: archivoInfo?.tamano || 0,
+            estado: "publicado"
+        })
+        .select()
+        .single();
+
+    if (error) {
+        console.error("Error al guardar publicación:", error);
+        throw error;
+    }
+
+    return data;
+}
 
 
 
