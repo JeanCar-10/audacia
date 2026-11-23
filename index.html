@@ -847,6 +847,47 @@
 
 
 
+// CONEXIÓN CON SUPABASE
+const SUPABASE_URL = "https://vvmdnyizpeqxqklwzrjg.supabase.co";
+
+const SUPABASE_KEY = "sb_publishable_NCyUNNozynQ4KDwATONDxA_Ack8oXL7";
+
+const clienteSupabase = window.supabase.createClient(
+    SUPABASE_URL,
+    SUPABASE_KEY
+);
+
+// SESIÓN ANÓNIMA DE LOS INTEGRANTES
+async function prepararSesionAnonima() {
+    const { data: sesionActual } = await clienteSupabase.auth.getSession();
+
+    if (sesionActual.session) {
+        return true;
+    }
+
+    const { data, error } = await clienteSupabase.auth.signInAnonymously();
+
+    if (error) {
+        console.error("Error al iniciar sesión anónima:", error);
+        return false;
+    }
+
+    return !!data.session;
+}
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+
 
 
 
@@ -2299,12 +2340,12 @@ iniciarBaseDatos()
 
 
 
-
-
-
-
-
 </script>
 
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+  
+  
 </body>
 </html>
