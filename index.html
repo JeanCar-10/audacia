@@ -1909,25 +1909,64 @@ async function restaurarRecurso(id) {
 
 /* Eliminar definitivamente */
 
+
 async function eliminarDefinitivamente(id) {
-    const recursos = await obtenerRecursos();
-    const recurso = recursos.find(item => item.id === id);
+    try {
+        const recursos = await obtenerRecursosSupabase();
+        const recurso = recursos.find(
+            item => String(item.id) === String(id)
+        );
 
-    if (!recurso) return;
+        if (!recurso) {
+            alert("No se encontró el documento en Supabase.");
+            return;
+        }
 
-    const confirmar = confirm(
-        `¿Eliminar definitivamente "${recurso.nombre}"?\n\nEsta acción no se puede deshacer.`
-    );
+        const confirmar = confirm(
+            `¿Eliminar definitivamente "${recurso.nombre}"?\n\nEsta acción no se puede deshacer.`
+        );
 
-    if (!confirmar) return;
+        if (!confirmar) return;
 
-    await eliminarRegistro(id);
+        // Eliminar primero el archivo del almacenamiento, si existe.
+        if (recurso.storagePath) {
+            const { error: errorArchivo } = await clienteSupabase
+                .storage
+                .from("audacia-archivos")
+                .remove([recurso.storagePath]);
 
-    registrarActividad("Eliminado definitivamente", recurso);
+            if (errorArchivo) throw errorArchivo;
+        }
 
-    await mostrarAdminSeccion("papelera");
-    await mostrarRecursos();
+        // Eliminar el registro de Supabase.
+        const { data, error } = await clienteSupabase
+            .from("recursos")
+            .delete()
+            .eq("id", id)
+            .select("id")
+            .maybeSingle();
+
+        if (error) throw error;
+
+        if (!data) {
+            throw new Error(
+                "Supabase no pudo eliminar el documento. Comprueba tus permisos de administrador."
+            );
+        }
+
+        registrarActividad("Eliminado definitivamente", recurso);
+
+        await mostrarAdminSeccion("papelera");
+        await mostrarRecursos();
+
+        alert("¡Documento eliminado definitivamente!");
+
+    } catch (error) {
+        console.error("Error al eliminar definitivamente:", error);
+        alert("Error: " + (error.message || "No se pudo eliminar el documento."));
+    }
 }
+
 
 /* Historial de actividad */
 
