@@ -1984,8 +1984,9 @@ if (!adminDetail.dataset.eventsReady) {
             }
 
             if (accion === "restaurar") {
-                await restaurarRecurso(id);
-            }
+            alert("El botón Restaurar sí está ejecutando la acción.");
+            await restaurarRecurso(id);
+        }
 
             if (accion === "definitivo") {
                 await eliminarDefinitivamente(id);
