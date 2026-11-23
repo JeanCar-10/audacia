@@ -1337,35 +1337,68 @@ function cerrarAccesoAdmin() {
     adminModal.setAttribute("aria-hidden", "true");
 }
 
-adminForm.addEventListener("submit", function(event) {
+
+adminForm.addEventListener("submit", async function(event) {
     event.preventDefault();
 
-    if (adminCode.value.trim() === CODIGO_ADMIN) {
+    const codigoIngresado = adminCode.value.trim();
+
+    if (!codigoIngresado) {
+        adminNotice.textContent = "Ingresa tu código de administrador.";
+        return;
+    }
+
+    adminNotice.textContent = "Verificando acceso...";
+
+    try {
+        const sesionLista = await prepararSesionAnonima();
+
+        if (!sesionLista) {
+            throw new Error("No se pudo iniciar la sesión.");
+        }
+
+        const { data, error } = await clienteSupabase.functions.invoke(
+            "clever-task",
+            { body: { pin: codigoIngresado } }
+        );
+
+        if (error || !data || !data.ok || data.rol !== "admin") {
+            throw new Error(
+                data?.error || "No se pudo autorizar el acceso de administrador."
+            );
+        }
 
         cerrarAccesoAdmin();
 
         document.getElementById("espacio-4d").hidden = true;
         document.getElementById("admin-dashboard").hidden = false;
-
         document.getElementById("admin-dashboard").scrollIntoView();
 
-        mostrarAdminSeccion("publicaciones");
-
         adminCode.value = "";
+        adminNotice.textContent = "";
 
-    } else {
-        adminNotice.textContent = "Código incorrecto. Inténtalo nuevamente.";
+        await mostrarAdminSeccion("publicaciones");
+
+    } catch (error) {
+        console.error("Error al ingresar como administrador:", error);
+        adminNotice.textContent =
+            error.message || "No se pudo verificar el código.";
         adminCode.value = "";
         adminCode.focus();
     }
 });
 
-function salirAdmin() {
+
+
+async function salirAdmin() {
     document.getElementById("admin-dashboard").hidden = true;
     document.getElementById("espacio-4d").hidden = false;
 
+    await clienteSupabase.auth.signOut();
+
     window.scrollTo(0, 0);
 }
+
 
 
 
