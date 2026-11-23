@@ -1859,22 +1859,53 @@ async function mostrarAdminPapelera() {
 
 /* Restaurar un recurso */
 
+
 async function restaurarRecurso(id) {
-    const recursos = await obtenerRecursos();
-    const recurso = recursos.find(item => item.id === id);
+    try {
+        const recursos = await obtenerRecursosSupabase();
+        const recurso = recursos.find(
+            item => String(item.id) === String(id)
+        );
 
-    if (!recurso) return;
+        if (!recurso) {
+            alert("No se encontró el documento en Supabase.");
+            return;
+        }
 
-    recurso.estado = "publicado";
-    recurso.eliminadoEn = null;
+        const { data, error } = await clienteSupabase
+            .from("recursos")
+            .update({
+                estado: "publicado",
+                eliminado_en: null
+            })
+            .eq("id", id)
+            .select("id")
+            .maybeSingle();
 
-    await guardarEnBaseDatos(recurso);
+        if (error) throw error;
 
-    registrarActividad("Recurso restaurado", recurso);
+        if (!data) {
+            throw new Error(
+                "Supabase no pudo restaurar el documento. Comprueba tus permisos."
+            );
+        }
 
-    await mostrarAdminSeccion("papelera");
-    await mostrarRecursos();
+        recurso.estado = "publicado";
+        recurso.eliminadoEn = null;
+
+        registrarActividad("Recurso restaurado", recurso);
+
+        await mostrarAdminSeccion("papelera");
+        await mostrarRecursos();
+
+        alert("¡Documento restaurado correctamente!");
+
+    } catch (error) {
+        console.error("Error al restaurar:", error);
+        alert("Error: " + (error.message || "No se pudo restaurar el documento."));
+    }
 }
+
 
 /* Eliminar definitivamente */
 
