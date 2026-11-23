@@ -1074,32 +1074,65 @@ function guardarConfiguracion(nuevaConfiguracion) {
     // =================================
 
 
-      function verificarPIN() {
+async function verificarPIN() {
 
-          const pinIngresado = pinInput.value.trim();
+    const pinIngresado = pinInput.value.trim();
 
-          if (pinIngresado === PIN_AULA_4D) {
+    if (!pinIngresado) {
+        pinNotice.textContent = 'Ingresa el PIN del aula.';
+        return;
+    }
 
-              modal.classList.remove('open');
-              modal.setAttribute('aria-hidden', 'true');
+    pinNotice.textContent = 'Verificando acceso...';
 
-              document.getElementById('inicio').hidden = true;
-              document.getElementById('espacio-4d').hidden = false;
-              document.getElementById('footer-inicio').hidden = true;
+    try {
 
-              pinNotice.textContent = '';
+        const sesionLista = await prepararSesionAnonima();
 
-              window.scrollTo(0, 0);
+        if (!sesionLista) {
+            throw new Error('No se pudo iniciar la sesión.');
+        }
 
-          } else {
+        const { data, error } = await clienteSupabase.functions.invoke(
+            'clever-task',
+            {
+                body: { pin: pinIngresado }
+            }
+        );
 
-              pinNotice.textContent = 'PIN incorrecto. Inténtalo nuevamente.';
+        if (error || !data || !data.ok) {
+            throw new Error(
+                data?.error || 'No se pudo verificar el acceso.'
+            );
+        }
 
-              pinInput.value = '';
-              pinInput.focus();
+        modal.classList.remove('open');
+        modal.setAttribute('aria-hidden', 'true');
 
-          }
-      }
+        document.getElementById('inicio').hidden = true;
+        document.getElementById('espacio-4d').hidden = false;
+        document.getElementById('footer-inicio').hidden = true;
+
+        pinNotice.textContent = '';
+
+        pinInput.value = '';
+
+        window.scrollTo(0, 0);
+
+    } catch (error) {
+
+        console.error('Error de acceso:', error);
+
+        pinNotice.textContent =
+            error.message === 'FunctionsHttpError'
+                ? 'No se pudo conectar con el servicio de acceso.'
+                : error.message;
+
+        pinInput.value = '';
+        pinInput.focus();
+
+    }
+}
 
 
 
