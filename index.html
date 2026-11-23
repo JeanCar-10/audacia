@@ -2084,22 +2084,53 @@ async function guardarRecurso() {
     boton.disabled = true;
     mensaje.textContent = "Publicando recurso...";
 
-    try {
-        const recurso = {
-            id: crypto.randomUUID(),
-            nombre,
-            tipo,
-            comentario,
-            url,
-            archivo,
-            nombreArchivo: archivo ? archivo.name : "",
-            tamano: archivo ? archivo.size : 0,
-            fecha: new Date().toISOString(),
-            estado: "publicado",
-            eliminadoEn: null
-        };
+try {
+    const recurso = {
+        id: crypto.randomUUID(),
+        nombre,
+        tipo,
+        comentario,
+        url,
+        archivo,
+        nombreArchivo: archivo ? archivo.name : "",
+        tamano: archivo ? archivo.size : 0,
+        fecha: new Date().toISOString(),
+        estado: "publicado",
+        eliminadoEn: null
+    };
 
-        await guardarEnBaseDatos(recurso);
+    let archivoInfo = null;
+
+    // Subir el archivo, si corresponde
+    if (archivo) {
+        archivoInfo = await subirArchivoSupabase(archivo);
+    }
+
+    // Guardar la publicación en Supabase
+    let publicacion;
+
+    try {
+        publicacion = await guardarRecursoSupabase(
+            recurso,
+            archivoInfo
+        );
+    } catch (error) {
+        // Si falla el registro, retirar el archivo subido
+        if (archivoInfo?.storagePath) {
+            await clienteSupabase.storage
+                .from("audacia-archivos")
+                .remove([archivoInfo.storagePath]);
+        }
+
+        throw error;
+    }
+
+    // Conservar una copia local de respaldo
+    recurso.id = publicacion.id;
+    recurso.fecha = publicacion.fecha;
+    recurso.storagePath = archivoInfo?.storagePath || "";
+
+    await guardarEnBaseDatos(recurso);
 
         document.getElementById("formulario-recurso").hidden = true;
 
