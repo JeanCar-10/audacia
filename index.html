@@ -1708,28 +1708,51 @@ async function mostrarAdminPublicaciones() {
 
 /* Enviar un recurso a la papelera */
 
+
 async function enviarAPapelera(id) {
-    const recursos = await obtenerRecursos();
-    const recurso = recursos.find(item => item.id === id);
+    try {
+        const recursos = await obtenerRecursosSupabase();
+        const recurso = recursos.find(item => item.id === id);
 
-    if (!recurso) return;
+        if (!recurso) {
+            alert("No se encontró el documento.");
+            return;
+        }
 
-    const confirmar = confirm(
-        `¿Enviar "${recurso.nombre}" a la papelera?\n\nPodrás recuperarlo durante 7 días.`
-    );
+        const confirmar = confirm(
+            `¿Enviar "${recurso.nombre}" a la papelera?\n\nPodrás recuperarlo durante 7 días.`
+        );
 
-    if (!confirmar) return;
+        if (!confirmar) return;
 
-    recurso.estado = "papelera";
-    recurso.eliminadoEn = new Date().toISOString();
+        const fechaEliminacion = new Date().toISOString();
 
-    await guardarEnBaseDatos(recurso);
+        const { error } = await clienteSupabase
+            .from("recursos")
+            .update({
+                estado: "papelera",
+                eliminado_en: fechaEliminacion
+            })
+            .eq("id", id);
 
-    registrarActividad("Enviado a papelera", recurso);
+        if (error) throw error;
 
-    await mostrarAdminSeccion("publicaciones");
-    await mostrarRecursos();
+        recurso.estado = "papelera";
+        recurso.eliminadoEn = fechaEliminacion;
+
+        registrarActividad("Enviado a papelera", recurso);
+
+        await mostrarAdminSeccion("publicaciones");
+        await mostrarRecursos();
+
+        alert("Documento enviado a la papelera correctamente.");
+
+    } catch (error) {
+        console.error("Error al enviar a papelera:", error);
+        alert("No se pudo enviar el documento a la papelera. Revisa la conexión y tus permisos.");
+    }
 }
+
 
 /* Editar el nombre y comentario de una publicación */
 
